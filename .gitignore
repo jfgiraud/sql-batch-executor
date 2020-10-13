@@ -1,0 +1,8 @@
+/target/
+/src/test/resources/testdb.tmp/
+/src/test/resources/testdb
+/src/test/resources/testdb.log
+/src/test/resources/testdb.properties
+/src/test/resources/testdb.script
+/src/test/test.iml
+/src/main/main.iml
