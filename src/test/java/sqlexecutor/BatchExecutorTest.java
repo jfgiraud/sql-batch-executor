@@ -3,11 +3,11 @@ package sqlexecutor;
 import junit.framework.TestCase;
 import sqlexecutor.bean.User;
 import sqlexecutor.job.AddUserJob;
-import sqlexecutor.job.SelectUsersJob;
+import sqlexecutor.job.SelectAllUsersJob;
+import sqlexecutor.job.SelectUsersByNameJob;
 
 import java.sql.*;
 import java.util.List;
-import java.util.Map;
 
 public class BatchExecutorTest extends TestCase {
 
@@ -29,23 +29,23 @@ public class BatchExecutorTest extends TestCase {
     }
 
     public void testInTransactionOk() throws Exception {
-        BatchExecutor sqlExecutor = new BatchExecutor(TEST_DB_URL, true);
+        SqlBatchExecutor sqlExecutor = new SqlBatchExecutor(TEST_DB_URL, true);
 
         AddUserJob job = new AddUserJob(createUser("john", "doe"), createUser("jane", "doe"));
 
-        sqlExecutor.executeUpdate(job);
+        sqlExecutor.update(job);
 
         assertEquals(2, count());
     }
 
     public void testInTransactionOkInContainer() throws Exception {
-        BatchExecutor sqlExecutor = new BatchExecutor(TEST_DB_URL, true);
+        SqlBatchExecutor sqlExecutor = new SqlBatchExecutor(TEST_DB_URL, true);
 
         JobContainer jobContainer = new JobContainer();
         jobContainer.add(new AddUserJob(createUser("john", "doe")));
         jobContainer.add(new AddUserJob(createUser("jane", "doe")));
 
-        sqlExecutor.executeUpdate(jobContainer);
+        sqlExecutor.update(jobContainer);
 
         assertEquals(2, count());
     }
@@ -58,12 +58,15 @@ public class BatchExecutorTest extends TestCase {
     }
 
     public void testInTransactionKo() throws Exception {
-        BatchExecutor sqlExecutor = new BatchExecutor(TEST_DB_URL, true);
+        SqlBatchExecutor sqlExecutor = new SqlBatchExecutor(TEST_DB_URL, true);
 
         try {
-            AddUserJob job = new AddUserJob(createUser("john", "wayne"), createUser("john", "wayne"));
+            AddUserJob job = new AddUserJob(
+                    createUser("john", "wayne"),
+                    createUser("john", "wayne")
+            );
 
-            sqlExecutor.executeUpdate(job);
+            sqlExecutor.update(job);
 
             fail("An exception must be raised");
         } catch (Exception e) {
@@ -72,16 +75,44 @@ public class BatchExecutorTest extends TestCase {
     }
 
     public void testSelectAll() throws Exception {
-        BatchExecutor sqlExecutor = new BatchExecutor(TEST_DB_URL, true);
+        SqlBatchExecutor sqlExecutor = new SqlBatchExecutor(TEST_DB_URL, true);
 
         AddUserJob job = new AddUserJob(createUser("john", "doe"), createUser("jane", "doe"));
 
-        sqlExecutor.executeUpdate(job);
+        sqlExecutor.update(job);
 
-        List<User> result = sqlExecutor
-                .executeQuery(new SelectUsersJob());
+        List<User> result = sqlExecutor.select(new SelectAllUsersJob());
 
         assertEquals(2, result.size());
+    }
+
+    public void testSelect() throws Exception {
+        SqlBatchExecutor sqlExecutor = new SqlBatchExecutor(TEST_DB_URL, true);
+        AddUserJob job = new AddUserJob(
+                createUser("john", "doe"),
+                createUser("jane", "doe"),
+                createUser("paul", "personne")
+        );
+        sqlExecutor.update(job);
+
+        List<User> result = sqlExecutor.select(new SelectUsersByNameJob("personne"));
+
+        assertEquals(1, result.size());
+
+    }
+
+    public void testSelect1() throws Exception {
+        SqlBatchExecutor sqlExecutor = new SqlBatchExecutor(TEST_DB_URL, true);
+        AddUserJob job = new AddUserJob(
+                createUser("john", "doe"),
+                createUser("jane", "doe"),
+                createUser("paul", "personne")
+        );
+        sqlExecutor.update(job);
+
+        User result = sqlExecutor.select1(new SelectUsersByNameJob("personne"));
+
+        assertEquals("paul", result.getFirstName());
     }
 
     private int count() throws SQLException {

@@ -4,12 +4,12 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
 
-public class BatchExecutor {
+public class SqlBatchExecutor {
 
     private boolean inTransaction;
     private String databaseUrl;
 
-    public BatchExecutor(String databaseUrl, boolean inTransaction) {
+    public SqlBatchExecutor(String databaseUrl, boolean inTransaction) {
         this.inTransaction = inTransaction;
         this.databaseUrl = databaseUrl;
     }
@@ -20,7 +20,7 @@ public class BatchExecutor {
         return connection;
     }
 
-    public void executeUpdate(Job job) throws Exception {
+    public void update(Job job) throws Exception {
         Connection connection = open();
         try {
             job.execute(connection);
@@ -33,10 +33,22 @@ public class BatchExecutor {
         }
     }
 
-    public <T> List<T> executeQuery(Job<List<T>> job) throws SQLException {
+    public <T> List<T> select(SelectJob<T> job) throws SQLException {
         Connection connection = open();
         try {
             return job.execute(connection);
+        } finally {
+            connection.close();
+        }
+    }
+
+    public <T> T select1(SelectJob<T> job) throws SQLException {
+        Connection connection = open();
+        try {
+            List<T> l = job.execute(connection);
+            if (l.isEmpty())
+                return null;
+            return l.get(0);
         } finally {
             connection.close();
         }
