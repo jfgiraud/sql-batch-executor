@@ -1,5 +1,6 @@
 [![Build Status](https://app.travis-ci.com/jfgiraud/sql-batch-executor.svg?branch=master)](https://app.travis-ci.com/jfgiraud/sql-batch-executor)
 
+
 # sql-batch-executor
 Request database by defining jobs in or out transaction
 
